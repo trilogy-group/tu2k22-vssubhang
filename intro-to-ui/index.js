@@ -13,12 +13,14 @@ signInButton.addEventListener("click", () => {
 
 let apiCall = async(url, requestOptions)=> {
     let response = await fetch(url, requestOptions);
-    console.log(response.status)
-    alert(response.status)
+    if(response.status == "200")
+        alert("Logged in")
+    else
+        alert("Could not Log in. Try again")
 }
 
 let validateRegister = (username, email, password, confirmPassword) => {
-    return password == confirmPassword;
+    return password == confirmPassword && validateEmail(email);
 };
 
 function validateEmail(mail) 
@@ -70,7 +72,7 @@ let login = () => {
     const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-password").value;
 
-    if (!validateLogin(email, password)) {
+    if (!validateEmail(email)) {
         return;
     }
     var myHeaders = new Headers();
