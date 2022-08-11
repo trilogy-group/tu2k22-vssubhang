@@ -55,9 +55,9 @@ class OHLCVView(APIView):
                 record = record.first()
                 pass
             else:
-                record = OHLCV(open_price=-1, close_price=-1, high_price=-1, low_price=-1, volume=0, market_id=market_day, stock_id=stock)
+                record = OHLCV(open_price=-1.00, close_price=-1.00, high_price=-1.00, low_price=-1.00, volume=0, market_id=market_day, stock_id=stock)
                 record.save()
-            response.append({'open': record.open_price, 'close': record.close_price, 'low': record.low_price, 'high': record.high_price, 'day': market_day.day, 'stock': stock.name, 'volume': record.volume})
+            response.append({'open': "{:.2f}".format(record.open_price), 'close': "{:.2f}".format(record.close_price), 'low': "{:.2f}".format(record.low_price), 'high': "{:.2f}".format(record.high_price), 'day': market_day.day, 'stock': stock.name, 'volume': record.volume})
 
         return Response(response, status=status.HTTP_200_OK)
 

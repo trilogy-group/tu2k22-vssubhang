@@ -13,6 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 
 import datetime
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class OrderViewset(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, ]
@@ -29,39 +33,43 @@ class OrderViewset(viewsets.ModelViewSet):
 
         serializer = OrderSerializer(data=new_data)
         if not serializer.is_valid():
+            logger.error("400 Bad Request")
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         market_day = MarketDay.objects.filter(status="open")
         if not len(market_day):
-            print('Fialure')
+            logger.error("403 Forbidden")
             return Response(status=status.HTTP_403_FORBIDDEN)
         
         user = Users.objects.filter(email=request.user).first()
 
         if serializer.validated_data['type'] == "BUY":
             if serializer.validated_data['bid_price'] * serializer.validated_data['bid_volume'] > user.available_funds:
-                print("no Money")
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         elif serializer.validated_data['type'] == 'SELL':
             holding_list = Holdings.objects.filter(user_id=user.id, stock_id=serializer.validated_data['stock'])
             stock_list = holding_list.aggregate(total_sum=Sum('volume'))
             
             if stock_list['total_sum'] == None or stock_list['total_sum'] < serializer.validated_data['bid_volume']:
+                logger.error("400 Bad Request")
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
+            logger.error("400 Bad Request")
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
         if serializer.validated_data['type'] == "BUY":
             user.available_funds -= serializer.validated_data['bid_price'] * serializer.validated_data['bid_volume']
             user.blocked_funds += serializer.validated_data['bid_price'] * serializer.validated_data['bid_volume']
             user.save()
-        print("bye")
+        
         serializer.save()
-        return Response(status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, pk=None):
         user = Users.objects.filter(email=request.user).first()
         order = Orders.objects.filter(id=pk)
+        serializer = OrderSerializer(order)
         if not order.exists():
             return Response(status=status.HTTP_404_NOT_FOUND)
         order = order.first()
@@ -71,7 +79,7 @@ class OrderViewset(viewsets.ModelViewSet):
         user.save()
         order.delete()
 
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
             
 
     @action(detail=False, methods=['post'])
