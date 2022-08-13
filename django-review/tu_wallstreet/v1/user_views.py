@@ -11,7 +11,14 @@ from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 
+import json
+import requests
 import re
+
+url = "https://github.com/login/oauth/access_token"
+client_secret = "44785ed97b12248ab18f10fed07b0b2f6ed98b9f"
+client_id = "849de396af06ce813bc2"
+GITHUB_ACCESS_TOKEN_URL= "https://github.com/login/oauth/access_token?client_id="+client_id +"&client_secret=" + client_secret + "&code="
 
 class SignupView(APIView):
     def post(self, request, *args, **kwargs):
@@ -73,3 +80,49 @@ class UserViewset(viewsets.ModelViewSet):
     def list(self, request):
         user = Users.objects.filter(email=self.request.user).first()
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+class GithubLogin(APIView):
+    def post(self, request):
+        code = json.loads(request.body.decode('utf-8'))['code']
+        
+        header = {
+            "Accept" :"application/json"
+        }
+        result = requests.post(GITHUB_ACCESS_TOKEN_URL + code,  headers = header)
+        print(result)
+        try:
+            if result.status_code == 200: 
+                access_token = str(result.json().get('access_token'))
+
+                if access_token is None:
+                    print("access token not found")
+                    raise Exception
+
+                headers = {
+                    'Accept': 'application/vnd.github+json',
+                    "Authorization": "token " + access_token
+                }
+                email_response = requests.get("https://api.github.com/user", headers=headers)
+                print(email_response)
+                response_dict = email_response.json()
+                print(response_dict)
+                email = response_dict['login']
+                print(email)
+                
+                
+                print(email)
+                try:
+                    user,_ = User.objects.get_or_create(username=email)
+                    print("oauth success")
+                    token, _ = Token.objects.get_or_create(user=user)
+                    # return TokenSerializer
+                    return Response( {"token" : str(token)} , status=status.HTTP_200_OK)
+
+                except Exception as ex:
+                    print(ex)
+                    return Response({"please register using password first"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as ex:
+            print("error in oauth")
+            print(ex)
+            return Response({"UNABLE TO FETCH TOKEN FROM GITHUB !!"}, status=status.HTTP_400_BAD_REQUEST)
+
