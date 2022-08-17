@@ -126,3 +126,14 @@ class GithubLogin(APIView):
             print(ex)
             return Response({"UNABLE TO FETCH TOKEN FROM GITHUB !!"}, status=status.HTTP_400_BAD_REQUEST)
 
+class DevflowsCallback(APIView):
+    def get(self, request):
+        callback_body = {
+            "request_id": request.query_params["request_id"],
+            "event": "A new event triggering"
+        }
+        callback_url = request.query_params["callback_url"]
+
+        requests.post(callback_url, json=callback_body)
+
+        return Response(status=status.HTTP_200_OK)

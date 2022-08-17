@@ -44,7 +44,7 @@ class OHLCVView(APIView):
         try:
             selected_day = int(request.query_params['day'])
         except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            selected_day = model_to_dict(MarketDay.objects.latest('day'))['day']
         market_day = MarketDay.objects.filter(day=selected_day)[0]
         stock_list = Stocks.objects.all()
         response = []
