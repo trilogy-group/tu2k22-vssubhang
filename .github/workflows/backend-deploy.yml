@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [django-aws-deployment]
+    branches: [deployment-review]
 
 name: Push Django docker image to ECR and trigger redeploy on AWS ECS
 
