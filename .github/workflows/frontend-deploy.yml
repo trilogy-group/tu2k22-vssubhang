@@ -1,0 +1,31 @@
+
+on:
+  push:
+    branches: [frontend-deploy-review]
+
+name: Deploy frontend
+
+jobs:
+  # To build the project
+  build-tambola:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out code
+        uses: actions/checkout@v3
+      - name: Move to project repository
+        run: cd frontend-deploy/vssubhang-app
+      - name: Installing Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+      - name: Installing dependencies and build app
+        run: cd frontend-deploy/vssubhang-app/ && npm install && npm run build
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy to S3 bucket
+        run: aws s3 sync ./frontend-deploy/vssubhang-app/build/ s3://tu2k22-vssubhang-wallstreet-app-bucket --delete
