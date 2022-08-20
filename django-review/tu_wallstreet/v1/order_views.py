@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 import datetime
 
 import logging
+import multiprocessing
 
 logger = logging.getLogger(__name__)
 
@@ -80,15 +81,8 @@ class OrderViewset(viewsets.ModelViewSet):
         order.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-            
 
-    @action(detail=False, methods=['post'])
-    def match(self, request):
-        orders_all = Orders.objects.all()
-        buy_orders_all = orders_all.filter(type="BUY", status="PENDING").order_by("-bid_price")
-        sell_orders_all = orders_all.filter(type="SELL", status="PENDING").order_by("bid_price")    
-        query_user = Users.objects.filter(email=request.user).first()
-
+    def async_process_match(buy_orders_all, sell_orders_all):
         for buy_order in buy_orders_all:
             if buy_order.status == "COMPLETED":
                 continue
@@ -203,5 +197,27 @@ class OrderViewset(viewsets.ModelViewSet):
             new_holding.save()
             stock.save()
             buy_order.save()
+
+    @action(detail=False, methods=['post'])
+    def match(self, request):
+        orders_all = Orders.objects.all()
+        
+        buy_orders_all = orders_all.filter(type="BUY", status="PENDING").order_by("-bid_price")
+        sell_orders_all = orders_all.filter(type="SELL", status="PENDING").order_by("bid_price")
+        
+        stocks = Stocks.objects.all()
+
+        processors = []
+
+        for stock in stocks:
+            buy_stock_order = buy_orders_all.filter(id=stock.id)
+            sell_stock_order = sell_orders_all.filter(id=stock.id)
+            p = multiprocessing.Process(target=async_process_match, args=(buy_stock_order, sell_stock_order))
+            processors.append(p)
+            p.start()
+
+        for i in range(len(processors)):
+            processors[i].join()
+        
 
         return Response(status=status.HTTP_200_OK)
