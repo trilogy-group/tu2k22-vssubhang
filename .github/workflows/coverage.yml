@@ -17,8 +17,8 @@ jobs:
           cd django-review/tu_wallstreet/ && pip install -r requirements.txt
       - name: Get coverage
         run : |
-          cd django-review/tu_wallstreet/ && coverage run manage.py test
+          cd django-review/tu_wallstreet/ && coverage run manage.py test --omit=/usr/lib
       - name : Generate report
         run : |
           cd django-review/tu_wallstreet/
-          coverage report -m
+          coverage report -m --omit=/usr/lib
