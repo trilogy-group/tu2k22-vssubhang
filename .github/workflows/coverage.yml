@@ -1,0 +1,24 @@
+on:
+  push:
+    branches: [testing-review]
+
+name: Get code coverage
+
+jobs:
+  deploy:
+    name: Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install all dependencies
+        run : |
+          cd django-review/tu_wallstreet/ && pip install -r requirements.txt
+      - name: Get coverage
+        run : |
+          cd django-review/tu_wallstreet/ && coverage run --omit=/usr/lib/* manage.py test 
+      - name : Generate report
+        run : |
+          cd django-review/tu_wallstreet/
+          coverage report -m --omit=/usr/lib/*
