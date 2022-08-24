@@ -20,4 +20,5 @@ jobs:
           cd django-review/tu_wallstreet/ && coverage run manage.py test
       - name : Generate report
         run : |
-          cd django-review/tu_wallstreet/ && coverage report -m
+          cd django-review/tu_wallstreet/
+          coverage report -m
