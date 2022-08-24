@@ -23,7 +23,7 @@ from .holding_view import HoldingView
 from .sector_views import SectorViewset
 from .stock_views import StockViewset
 from .order_views import OrderViewset
-from .user_views import SignupView, LoginView, LogoutView, UserViewset, GithubLogin
+from .user_views import SignupView, LoginView, LogoutView, UserViewset
 
 delete_order = OrderViewset.as_view({
     'delete': 'destroy'
@@ -45,6 +45,6 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view()),
     path('auth/logout/', LogoutView.as_view()),
     path('orders/<int:pk>/cancel/', delete_order),
-    path('github-login/', GithubLogin.as_view()),
+    # path('github-login/', GithubLogin.as_view()),
     path('', include(router.urls))
 ]

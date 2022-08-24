@@ -44,7 +44,7 @@ class SignupView(APIView):
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
 
-        email = request.data.get('email').lower()
+        email = request.data.get('email')
         password = request.data.get('password')
 
         if not email or not password or not len(email) or not len(password):
@@ -52,7 +52,7 @@ class LoginView(APIView):
 
         if not re.match(r"^\S+@\S+\.\S+$", email):
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+        email = email.lower()
         user = authenticate(username=email, password=password)
         
         if user is None:
@@ -64,7 +64,6 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     def post(self, request, *args, **kwargs):
-        print('hi')
         print(request.user)
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -81,48 +80,48 @@ class UserViewset(viewsets.ModelViewSet):
         user = Users.objects.filter(email=self.request.user).first()
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
-class GithubLogin(APIView):
-    def post(self, request):
-        code = json.loads(request.body.decode('utf-8'))['code']
+# class GithubLogin(APIView):
+#     def post(self, request):
+#         code = json.loads(request.body.decode('utf-8'))['code']
         
-        header = {
-            "Accept" :"application/json"
-        }
-        result = requests.post(GITHUB_ACCESS_TOKEN_URL + code,  headers = header)
-        print(result)
-        try:
-            if result.status_code == 200: 
-                access_token = str(result.json().get('access_token'))
+#         header = {
+#             "Accept" :"application/json"
+#         }
+#         result = requests.post(GITHUB_ACCESS_TOKEN_URL + code,  headers = header)
+#         print(result)
+#         try:
+#             if result.status_code == 200: 
+#                 access_token = str(result.json().get('access_token'))
 
-                if access_token is None:
-                    print("access token not found")
-                    raise Exception
+#                 if access_token is None:
+#                     print("access token not found")
+#                     raise Exception
 
-                headers = {
-                    'Accept': 'application/vnd.github+json',
-                    "Authorization": "token " + access_token
-                }
-                email_response = requests.get("https://api.github.com/user", headers=headers)
-                print(email_response)
-                response_dict = email_response.json()
-                print(response_dict)
-                email = response_dict['login']
-                print(email)
+#                 headers = {
+#                     'Accept': 'application/vnd.github+json',
+#                     "Authorization": "token " + access_token
+#                 }
+#                 email_response = requests.get("https://api.github.com/user", headers=headers)
+#                 print(email_response)
+#                 response_dict = email_response.json()
+#                 print(response_dict)
+#                 email = response_dict['login']
+#                 print(email)
                 
                 
-                print(email)
-                try:
-                    user,_ = User.objects.get_or_create(username=email)
-                    print("oauth success")
-                    token, _ = Token.objects.get_or_create(user=user)
-                    # return TokenSerializer
-                    return Response( {"token" : str(token)} , status=status.HTTP_200_OK)
+#                 print(email)
+#                 try:
+#                     user,_ = User.objects.get_or_create(username=email)
+#                     print("oauth success")
+#                     token, _ = Token.objects.get_or_create(user=user)
+#                     # return TokenSerializer
+#                     return Response( {"token" : str(token)} , status=status.HTTP_200_OK)
 
-                except Exception as ex:
-                    print(ex)
-                    return Response({"please register using password first"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as ex:
-            print("error in oauth")
-            print(ex)
-            return Response({"UNABLE TO FETCH TOKEN FROM GITHUB !!"}, status=status.HTTP_400_BAD_REQUEST)
+#                 except Exception as ex:
+#                     print(ex)
+#                     return Response({"please register using password first"}, status=status.HTTP_400_BAD_REQUEST)
+#         except Exception as ex:
+#             print("error in oauth")
+#             print(ex)
+#             return Response({"UNABLE TO FETCH TOKEN FROM GITHUB !!"}, status=status.HTTP_400_BAD_REQUEST)
 
